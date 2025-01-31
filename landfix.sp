@@ -1,6 +1,5 @@
 #include <sdktools>
 #include <sdkhooks>
-#include <clientprefs>
 
 #pragma semicolon 1
 
@@ -13,37 +12,23 @@ public Plugin myinfo =
 	url = ""
 }
 
-//ConVar gCV_Units = null;
-Handle gH_CookieEnabled = null;
-
 bool gB_Enabled[MAXPLAYERS+1] = {false, ...};
-
 int gI_LastGroundEntity[MAXPLAYERS + 1];
 
 public void OnPluginStart()
 {
 	RegConsoleCmd("sm_landfix", Command_LandFix, "Landfix");
 	RegConsoleCmd("sm_64fix", Command_LandFix, "Landfix");
-	//gCV_Units = CreateConVar("landfix_units", "1.5", "", 0, true, 0.0, true, 2.0);
-	
-	gH_CookieEnabled = RegClientCookie("landfix_enabled", "landfix_enabled", CookieAccess_Protected);
-	//AutoExecConfig();
 	
 	for(int i = 1; i <= MaxClients; i++)
 	{
-		if(IsClientInGame(i) && AreClientCookiesCached(i))
-		{
-			OnClientCookiesCached(i);
-		}
+		gB_Enabled[i] = false;	
 	}
 }
 
-public void OnClientCookiesCached(int client)
+public void OnClientPutInServer(int client)
 {
-	char sCookie[8];
-	
-	GetClientCookie(client, gH_CookieEnabled, sCookie, sizeof(sCookie));
-	gB_Enabled[client] = view_as<bool>(StringToInt(sCookie));
+	gB_Enabled[client] = false;
 }
 
 public Action Command_LandFix(int client, int args)
@@ -51,7 +36,6 @@ public Action Command_LandFix(int client, int args)
 	if(client == 0) return Plugin_Handled;
 
 	gB_Enabled[client] = !gB_Enabled[client];
-	SetClientCookie(client, gH_CookieEnabled, gB_Enabled[client] ? "1" : "0");
 	PrintToChat(client, "LandFix: %s", gB_Enabled[client] ? "Enabled" : "Disabled");
 	return Plugin_Handled;
 }
