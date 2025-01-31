@@ -50,7 +50,7 @@ public void OnLibraryAdded(const char[] name)
 	gB_Shavit = LibraryExists("shavit");
 }
 
-public void OnLibRaryRemoved(const char[] name)
+public void OnLibraryRemoved(const char[] name)
 {
 	gB_Shavit = LibraryExists("shavit");
 }
