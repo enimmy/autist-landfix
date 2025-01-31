@@ -1,7 +1,12 @@
+#pragma newdecls required
+#pragma semicolon 1
+
 #include <sdktools>
 #include <sdkhooks>
 
-#pragma semicolon 1
+#undef REQUIRE_PLUGIN
+#include <shavit/core>
+#include <shavit/hud>
 
 public Plugin myinfo = 
 {
@@ -13,6 +18,7 @@ public Plugin myinfo =
 }
 
 bool gB_Enabled[MAXPLAYERS+1] = {false, ...};
+bool gB_Shavit = false;
 int gI_LastGroundEntity[MAXPLAYERS + 1];
 
 public void OnPluginStart()
@@ -24,6 +30,29 @@ public void OnPluginStart()
 	{
 		gB_Enabled[i] = false;	
 	}
+	gB_Shavit = LibraryExists("shavit");
+}
+
+public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
+{
+	CreateNative("Landfix_GetLandfixEnabled", Native_GetLandfixEnabled);
+	RegPluginLibrary("modern-landfix");
+	return APLRes_Success;
+}
+
+int Native_GetLandfixEnabled(Handle handler, int numParams)
+{
+	return gB_Enabled[GetNativeCell(1)];
+}
+
+public void OnLibraryAdded(const char[] name)
+{
+	gB_Shavit = LibraryExists("shavit");
+}
+
+public void OnLibRaryRemoved(const char[] name)
+{
+	gB_Shavit = LibraryExists("shavit");
 }
 
 public void OnClientPutInServer(int client)
@@ -36,7 +65,15 @@ public Action Command_LandFix(int client, int args)
 	if(client == 0) return Plugin_Handled;
 
 	gB_Enabled[client] = !gB_Enabled[client];
-	PrintToChat(client, "LandFix: %s", gB_Enabled[client] ? "Enabled" : "Disabled");
+
+	if(gB_Shavit)
+	{
+		Shavit_PrintToChat(client, "LandFix: %s", gB_Enabled[client] ? "Enabled" : "Disabled");
+	}
+	else
+	{
+		PrintToChat(client, "LandFix: %s", gB_Enabled[client] ? "Enabled" : "Disabled");
+	}
 	return Plugin_Handled;
 }
 
@@ -72,6 +109,13 @@ float GetGroundUnits(int client)
 	}
 
 	return (origin[2] - originBelow[2] + defaultHeight);
+}
+
+public Action Shavit_PreOnKeyHintHUD(int client, int target, char[] keyhint, int keyhintlength, int track, int style, bool &forceUpdate)
+{
+	Format(keyhint, keyhintlength, "Landfix: %s\n\n", gB_Enabled[client] ? "On":"Off");
+	forceUpdate = true;
+	return Plugin_Changed;
 }
 
 public Action OnPlayerRunCmd(int client, int &buttons)
